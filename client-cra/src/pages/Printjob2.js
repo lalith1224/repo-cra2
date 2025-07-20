@@ -427,7 +427,7 @@ const PrintJob = () => {
         jobId: result.data.id,
       };
       
-      navigate("/thank-you", { state: { orderData } });
+      navigate("/thank-you2", { state: { orderData } });
     } catch (error) {
       console.error('Error creating print job:', error);
       toast.error(error.message || "Failed to create print job");
