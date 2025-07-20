@@ -390,6 +390,8 @@ const Admin = () => {
                       <p><strong>Quantity:</strong> {job.quantity}</p>
                       <p><strong>Price:</strong> {formatPrice(job.total_price)}</p>
                       <p><strong>Date:</strong> {formatDate(job.created_at)}</p>
+                      <p><strong>Paper Size:</strong> {job.paper_size || "A4"}</p>
+                      <p><strong>Binding:</strong> {job.binding_type || "N/A"}</p>
                     </div>
                     <div className="job-actions" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                       <button
