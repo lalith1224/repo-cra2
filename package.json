@@ -1,0 +1,33 @@
+{
+  "name": "print-repository-system",
+  "version": "1.0.0",
+  "description": "Full-stack Print Repository System for educational institutions",
+  "private": true,
+  "scripts": {
+    "install-all": "npm install && cd server && npm install && cd ../client && npm install",
+    "dev": "concurrently \"npm run server\" \"npm run client\"",
+    "server": "cd server && npm run dev",
+    "client": "cd client && npm start",
+    "build": "cd client && npm run build",
+    "test": "cd server && npm test",
+    "lint": "cd server && npm run lint && cd ../client && npm run lint",
+    "setup": "./start.sh"
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.2"
+  },
+  "keywords": [
+    "print",
+    "repository",
+    "education",
+    "nodejs",
+    "react",
+    "postgresql"
+  ],
+  "author": "Print Repository Team",
+  "license": "MIT",
+  "engines": {
+    "node": ">=16.0.0",
+    "npm": ">=8.0.0"
+  }
+} 

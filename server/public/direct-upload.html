@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Direct PDF Upload Test</title>
+    <style>
+        body { font-family: Arial, sans-serif; max-width: 800px; margin: 0 auto; padding: 20px; }
+        .upload-container { border: 2px dashed #ccc; padding: 20px; text-align: center; margin: 20px 0; }
+        #preview { margin-top: 20px; }
+        #result { margin-top: 20px; padding: 10px; border-radius: 4px; }
+        .success { background-color: #d4edda; color: #155724; }
+        .error { background-color: #f8d7da; color: #721c24; }
+    </style>
+</head>
+<body>
+    <h1>Direct PDF Upload Test</h1>
+    
+    <div class="upload-container">
+        <h3>Upload PDF File</h3>
+        <form id="uploadForm" enctype="multipart/form-data">
+            <input type="file" id="fileInput" name="file" accept=".pdf" required>
+            <div>
+                <label>Roll Number: <input type="text" name="rollNumber" value="TEST123" required></label>
+            </div>
+            <button type="submit" style="margin-top: 10px; padding: 8px 16px;">Upload</button>
+        </form>
+    </div>
+
+    <div id="preview">
+        <h3>File Preview</h3>
+        <iframe id="pdfPreview" width="100%" height="500px" style="border: 1px solid #ccc;"></iframe>
+    </div>
+
+    <div id="result"></div>
+
+    <script>
+        const form = document.getElementById('uploadForm');
+        const fileInput = document.getElementById('fileInput');
+        const pdfPreview = document.getElementById('pdfPreview');
+        const resultDiv = document.getElementById('result');
+
+        // Show PDF preview when file is selected
+        fileInput.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (file && file.type === 'application/pdf') {
+                const fileURL = URL.createObjectURL(file);
+                pdfPreview.src = fileURL;
+            } else {
+                pdfPreview.src = '';
+            }
+        });
+
+        // Handle form submission
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const formData = new FormData(form);
+            resultDiv.textContent = 'Uploading...';
+            resultDiv.className = '';
+
+            try {
+                const response = await fetch('http://localhost:5001/api/print-job/upload', {
+                    method: 'POST',
+                    body: formData,
+                    // Don't set Content-Type header - let the browser set it with the boundary
+                });
+
+                const result = await response.json();
+                
+                if (response.ok) {
+                    resultDiv.className = 'success';
+                    resultDiv.innerHTML = `
+                        <strong>Upload Successful!</strong><br>
+                        Token: ${result.token}<br>
+                        File: ${result.original_filename}<br>
+                        <a href="/api/print-job/download/${result.token}" target="_blank">Download</a> | 
+                        <a href="/api/print-job/preview/${result.token}" target="_blank">Preview</a>
+                    `;
+                } else {
+                    throw new Error(result.error || 'Upload failed');
+                }
+            } catch (error) {
+                resultDiv.className = 'error';
+                resultDiv.textContent = `Error: ${error.message}`;
+                console.error('Upload error:', error);
+            }
+        });
+    </script>
+</body>
+</html>
