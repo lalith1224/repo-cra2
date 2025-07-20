@@ -148,16 +148,22 @@ const PrintJob = () => {
   const [loading, setLoading] = useState(false);
   const [previewPages, setPreviewPages] = useState([]);
   const [showPreview, setShowPreview] = useState(false);
+  const [paperSize, setPaperSize] = useState("");
+  const [bindingType, setBindingType] = useState("");
+
+
 
   const stepRef = useRef();
 
   useEffect(() => {
     const loadPdfJs = async () => {
       try {
+        // Load PDF.js from CDN to avoid import.meta issues
         if (!window.pdfjsLib) {
           const script = document.createElement('script');
           script.src = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js';
           script.onload = () => {
+            // Set worker source
             window.pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
           };
           document.head.appendChild(script);
@@ -171,6 +177,7 @@ const PrintJob = () => {
 
   const generatePdfPreview = async (file) => {
     try {
+      // Wait for PDF.js to load if not already loaded
       if (!window.pdfjsLib) {
         await new Promise((resolve) => {
           const checkPdfJs = () => {
@@ -205,6 +212,7 @@ const PrintJob = () => {
           });
         } catch (pageError) {
           console.error(`Error rendering page ${i}:`, pageError);
+          // Add a placeholder for failed pages
           pages.push({
             id: i - 1,
             thumbnail: `https://via.placeholder.com/150x200/6c757d/ffffff?text=Page+${i}`,
@@ -226,6 +234,7 @@ const PrintJob = () => {
       console.error('PDF preview error:', error);
       toast.error("Failed to generate PDF preview. Using placeholder.");
       
+      // Create a placeholder preview
       setPreviewPages([{
         id: 0,
         thumbnail: `https://via.placeholder.com/150x200/6c757d/ffffff?text=PDF+File`,
@@ -289,12 +298,15 @@ const PrintJob = () => {
 
     try {
       setLoading(true);
+      
+      // Reset preview state
       setShowPreview(false);
       setPreviewPages([]);
       setSelectedPages([]);
       
       console.log('Selected file:', file.name, 'Type:', file.type, 'Size:', file.size);
       
+      // Upload the file
       const uploadSuccess = await handleFileUpload(file);
       
       if (!uploadSuccess) {
@@ -302,6 +314,7 @@ const PrintJob = () => {
         return;
       }
       
+      // Generate preview based on file type
       const fileExtension = file.name.split('.').pop().toLowerCase();
       let previewGenerated = false;
       
@@ -313,6 +326,7 @@ const PrintJob = () => {
         } else if (['docx', 'doc'].includes(fileExtension)) {
           await generateDocumentPreview(file);
         } else {
+          // For unsupported file types, create a generic preview
           setPreviewPages([{
             id: 0,
             thumbnail: `https://via.placeholder.com/150x200/6c757d/ffffff?text=${fileExtension.toUpperCase()}`,
@@ -326,6 +340,7 @@ const PrintJob = () => {
         toast.success('File loaded successfully!');
       } catch (previewError) {
         console.error('Preview generation error:', previewError);
+        // Create a fallback preview
         setPreviewPages([{
           id: 0,
           thumbnail: `https://via.placeholder.com/150x200/6c757d/ffffff?text=File+Preview`,
@@ -342,9 +357,12 @@ const PrintJob = () => {
       toast.error(`Failed to process file: ${error.message || 'Unknown error'}`);
     } finally {
       setLoading(false);
+      // Note: Don't reset the input value here as it prevents re-uploading the same file
+      // The value is reset after successful upload in the handleFileUpload function
     }
   };
 
+  // ---- VALIDATION LOGIC for step navigation & submission ----
   const canNext = () => {
     if (step === 0) return !!uploadedFile && !!rollNumber.trim();
     if (step === 1) return !!printOptions.copies && printOptions.copies > 0; 
@@ -367,17 +385,23 @@ const PrintJob = () => {
     }
     setLoading(true);
     try {
+      // Create the print job in the backend
       const formData = new FormData();
       
+      // Add the uploaded file to the form data
       if (uploadedFile) {
         formData.append('file', uploadedFile);
       }
       
+      // Add the print job data
       formData.append('rollNumber', rollNumber);
       formData.append('totalPages', selectedPages.length);
       formData.append('totalPrice', pricing.total);
       formData.append('colorPages', printOptions.color ? selectedPages.length : 0);
       formData.append('bwPages', printOptions.color ? 0 : selectedPages.length);
+      formData.append("paperSize", paperSize);
+      formData.append("bindingType", bindingType);
+
       formData.append('printOptions', JSON.stringify(printOptions));
       
       const response = await fetch('http://localhost:5001/api/print-job/create', {
@@ -403,7 +427,7 @@ const PrintJob = () => {
         jobId: result.data.id,
       };
       
-      navigate("/thank-you2", { state: { orderData } });
+      navigate("/thank-you", { state: { orderData } });
     } catch (error) {
       console.error('Error creating print job:', error);
       toast.error(error.message || "Failed to create print job");
@@ -412,14 +436,10 @@ const PrintJob = () => {
     }
   };
 
-  const handleTrackOrder = () => {
-    navigate('/track-order');
-  };
-
   return (
     <>
       <Helmet>
-        <title>Academic Printing</title>
+        <title> Academic Printing</title>
         <style>{`
           body {
             font-family: 'Inter', 'Poppins', sans-serif;
@@ -447,16 +467,16 @@ const PrintJob = () => {
             margin: "0 auto",
           }}
         >
-          <Col
-            xs={12}
-            lg={6}
-            className="d-flex flex-column justify-content-center align-items-center"
-            style={{ 
-              minWidth: 0, 
-              minHeight: 430,
-              marginTop: "35px", 
-            }}
-          >
+         <Col
+  xs={12}
+  lg={6}
+  className="d-flex flex-column justify-content-center align-items-center"
+  style={{ 
+    minWidth: 0, 
+    minHeight: 430,
+    marginTop: "35px", 
+  }}
+>
             <motion.div
               className="w-100"
               style={{
@@ -508,7 +528,7 @@ const PrintJob = () => {
               <div className="mb-5 d-flex justify-content-between align-items-center px-2">
                 <div style={{ fontWeight: 700, fontSize: 19, letterSpacing: 0.3 }}>
                   <FaPrint style={{ color: "#bc9c61", marginRight: 7, fontSize: 18 }} />
-                  Academic Printing
+                   Academic Printing
                 </div>
                 <div>
                   <span
@@ -541,10 +561,10 @@ const PrintJob = () => {
                       </div>
                       <Form.Group className="mb-4">
                         <Form.Label className="fw-semibold">
-                          Roll Number
+                          Department
                         </Form.Label>
                         <Form.Control
-                          placeholder="E.g. 727624BCS043"
+                          placeholder="E.g. CSE,ECE"
                           value={rollNumber}
                           onChange={(e) => setRollNumber(e.target.value)}
                           required
@@ -559,6 +579,7 @@ const PrintJob = () => {
                           }}
                         />
                       </Form.Group>
+
                       <Form.Group>
                         <Form.Label className="fw-semibold">
                           Select File (.pdf, .docx, .jpg, .png)
@@ -607,6 +628,49 @@ const PrintJob = () => {
                           className="mb-2"
                         />
                       </Form.Group>
+
+                          <Form.Group className="mb-4">
+                        <Form.Label className="fw-semibold">Paper Size</Form.Label>
+                        <Form.Select
+                          value={paperSize}
+                          onChange={(e) => setPaperSize(e.target.value)}
+                          required
+                          style={{
+                            borderRadius: 14,
+                            border: "1.5px solid #d2ba88bb",
+                            fontSize: "1.16rem",
+                            background: "#fffbe9",
+                            fontWeight: 500,
+                          }}
+                        >
+                          
+                          <option value="A4">A4</option>
+                          <option value="A3">A3</option>
+                          
+                        </Form.Select>
+                      </Form.Group>
+
+                      <Form.Group className="mb-4">
+                        <Form.Label className="fw-semibold">Binding Type</Form.Label>
+                        <Form.Select
+                          value={bindingType}
+                          onChange={(e) => setBindingType(e.target.value)}
+                          required
+                          style={{
+                            borderRadius: 14,
+                            border: "1.5px solid #d2ba88bb",
+                            fontSize: "1.16rem",
+                            background: "#fffbe9",
+                            fontWeight: 500,
+                          }}
+                        >
+                          
+                          <option value="None">None</option>
+                          <option value="Spiral">Spiral Binding</option>
+                          <option value="Paper">Paper Binding</option>
+                        </Form.Select>
+                      </Form.Group>
+
                       <Form.Group>
                         <Form.Label>Copies</Form.Label>
                         <Form.Control
