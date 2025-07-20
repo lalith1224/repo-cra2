@@ -18,7 +18,6 @@ import {
   FaCheck,
   FaChevronRight,
   FaChevronLeft,
-  FaUserGraduate
 } from "react-icons/fa";
 import { convertDocxToPreview, convertDocToPreview } from "../utils/documentConverter";
 import niaLogo from "./nialogo.jpeg";
@@ -149,6 +148,10 @@ const PrintJob = () => {
   const [loading, setLoading] = useState(false);
   const [previewPages, setPreviewPages] = useState([]);
   const [showPreview, setShowPreview] = useState(false);
+  const [paperSize, setPaperSize] = useState("");
+  const [bindingType, setBindingType] = useState("");
+
+
 
   const stepRef = useRef();
 
@@ -396,6 +399,9 @@ const PrintJob = () => {
       formData.append('totalPrice', pricing.total);
       formData.append('colorPages', printOptions.color ? selectedPages.length : 0);
       formData.append('bwPages', printOptions.color ? 0 : selectedPages.length);
+      formData.append("paperSize", paperSize);
+      formData.append("bindingType", bindingType);
+
       formData.append('printOptions', JSON.stringify(printOptions));
       
       const response = await fetch('http://localhost:5001/api/print-job/create', {
@@ -573,6 +579,7 @@ const PrintJob = () => {
                           }}
                         />
                       </Form.Group>
+
                       <Form.Group>
                         <Form.Label className="fw-semibold">
                           Select File (.pdf, .docx, .jpg, .png)
@@ -621,6 +628,49 @@ const PrintJob = () => {
                           className="mb-2"
                         />
                       </Form.Group>
+
+                          <Form.Group className="mb-4">
+                        <Form.Label className="fw-semibold">Paper Size</Form.Label>
+                        <Form.Select
+                          value={paperSize}
+                          onChange={(e) => setPaperSize(e.target.value)}
+                          required
+                          style={{
+                            borderRadius: 14,
+                            border: "1.5px solid #d2ba88bb",
+                            fontSize: "1.16rem",
+                            background: "#fffbe9",
+                            fontWeight: 500,
+                          }}
+                        >
+                          
+                          <option value="A4">A4</option>
+                          <option value="A3">A3</option>
+                          
+                        </Form.Select>
+                      </Form.Group>
+
+                      <Form.Group className="mb-4">
+                        <Form.Label className="fw-semibold">Binding Type</Form.Label>
+                        <Form.Select
+                          value={bindingType}
+                          onChange={(e) => setBindingType(e.target.value)}
+                          required
+                          style={{
+                            borderRadius: 14,
+                            border: "1.5px solid #d2ba88bb",
+                            fontSize: "1.16rem",
+                            background: "#fffbe9",
+                            fontWeight: 500,
+                          }}
+                        >
+                          
+                          <option value="None">None</option>
+                          <option value="Spiral">Spiral Binding</option>
+                          <option value="Paper">Paper Binding</option>
+                        </Form.Select>
+                      </Form.Group>
+
                       <Form.Group>
                         <Form.Label>Copies</Form.Label>
                         <Form.Control
